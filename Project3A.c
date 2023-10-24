@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "SDES.h"
+#include <stdbool.h>
 
 // A structure to hold the certificate fields
 typedef struct {
@@ -11,13 +13,14 @@ typedef struct {
     char validityNotAfter[20];
     char subject[256];
     char subjectPublicKeyInfo[512];
+    int trustLevel;
 } Certificate;
 
 // A function to write the certificate to a file
 void writeCertificate(const char *filename, const Certificate *cert) {
     FILE *file = fopen(filename, "w");
     if (!file) {
-        printf("Error opening file.\n");
+        printf("Error opening file", 0);
         return;
     }
 
@@ -29,6 +32,7 @@ void writeCertificate(const char *filename, const Certificate *cert) {
     fprintf(file, "Validity Not After: %s\n", cert->validityNotAfter);
     fprintf(file, "Subject: %s\n", cert->subject);
     fprintf(file, "Subject Public Key Info: %s\n", cert->subjectPublicKeyInfo);
+    fprintf(file, "Trust Level: %d\n", cert->trustLevel);
 
     fclose(file);
 }
@@ -37,7 +41,7 @@ void writeCertificate(const char *filename, const Certificate *cert) {
 void readCertificate(const char *filename, Certificate *cert) {
     FILE *file = fopen(filename, "r");
     if (!file) {
-        printf("Error opening file.\n");
+        printf("Error opening file.\n", 0);
         return;
     }
 
@@ -49,14 +53,12 @@ void readCertificate(const char *filename, Certificate *cert) {
     fscanf(file, "Validity Not After: %s\n", cert->validityNotAfter);
     fscanf(file, "Subject: %[^\\n]\n", cert->subject);
     fscanf(file, "Subject Public Key Info: %[^\\n]\n", cert->subjectPublicKeyInfo);
+    fscanf(file, "Trust Level: %d", cert->trustLevel);
 
     fclose(file);
 }
 
 int main() {
-    // Write the certificate to a file
-    //writeCertificate("certificate.txt", &cert);
-
     // Read the certificate from the file
     Certificate readCert;
     readCertificate("certificate.txt", &readCert);
@@ -69,12 +71,45 @@ int main() {
         .validityNotBefore = readCert.validityNotBefore,
         .validityNotAfter = readCert.validityNotAfter,
         .subject = readCert.subject,
-        .subjectPublicKeyInfo = readCert.subjectPublicKeyInfo
+        .subjectPublicKeyInfo = readCert.subjectPublicKeyInfo,
+        .trustLevel = readCert.trustLevel
     };
 
+    // Write the certificate to a file
+    //writeCertificate("certificate.txt", &cert);
+
     // Print the read certificate to verify it was read correctly
-    printf("Read certificate:\n");
+    system("clear");
+    printf("Read certificate:\n", 0);
     printf("Version: %s\n", readCert.version);
+
+    // Hash the certificate
+    FILE *file = fopen("certificate.txt", "r");
+    bool flag = false;
+    char c, ch;
+    long long hashKey = 0;
+
+    do {
+        c = fgetc(file);
+        if (feof(file)) {
+            break;
+        }
+
+        if(!flag) {
+            ch = hash(c, hashKey, IV);
+            flag = true;
+        } else {
+            ch = hash(c, hashKey, ch);
+        }
+    } while(1);
+
+    int hashArray[8];
+    charToBinary(ch, hashArray);
+    
+    printf("Hash: ");
+    for (int i = 0; i < 8; i++) {
+        printf("%d", hashArray[i]);
+    }
 
    return 0;
 }
