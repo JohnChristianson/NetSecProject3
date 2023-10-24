@@ -54,29 +54,27 @@ void readCertificate(const char *filename, Certificate *cert) {
 }
 
 int main() {
-    Certificate cert = {
-        .version = "1",
-        .serialNumber = "1234567890",
-        .signatureAlgorithm = "sha256WithRSAEncryption",
-        .issuer = "CN=Test Certificate Authority,O=Test Org,C=US",
-        .validityNotBefore = "20230101000000Z",
-        .validityNotAfter = "20240101000000Z",
-        .subject = "CN=Test Subject,O=Test Org,C=US",
-        .subjectPublicKeyInfo = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtvr9T8ZU2HKSig..."
-    };
-
     // Write the certificate to a file
-    writeCertificate("certificate.txt", &cert);
+    //writeCertificate("certificate.txt", &cert);
 
     // Read the certificate from the file
     Certificate readCert;
     readCertificate("certificate.txt", &readCert);
 
+    Certificate cert = {
+        .version = readCert.version,
+        .serialNumber = readCert.serialNumber,
+        .signatureAlgorithm = readCert.signatureAlgorithm,
+        .issuer = readCert.issuer,
+        .validityNotBefore = readCert.validityNotBefore,
+        .validityNotAfter = readCert.validityNotAfter,
+        .subject = readCert.subject,
+        .subjectPublicKeyInfo = readCert.subjectPublicKeyInfo
+    };
+
     // Print the read certificate to verify it was read correctly
     printf("Read certificate:\n");
     printf("Version: %s\n", readCert.version);
-    
-   // ... repeat for other fields ...
 
    return 0;
 }
