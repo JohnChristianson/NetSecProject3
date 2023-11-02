@@ -462,12 +462,11 @@ char Hash_old(unsigned char *pixels, int size, long long something)
     return pixels[size-1];
 }
 
-char hash(unsigned char c, long long key, int* initVector) {
-    keys(key);
+char hash(unsigned char c, long long key) {
     charToBinary(c, plaintext);
-    xorArrays(plaintext, initVector, 8, plaintext);
+    xorArrays(plaintext, IV, 8, plaintext);
     Encrypt();
-    copyArray(ciphertext, initVector, 8);
+    copyArray(ciphertext, IV, 8);
     c = binaryArrayToChar(ciphertext);
 
     return c;

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "SDES.h"
 #include <stdbool.h>
+#include <time.h>
 
 // A structure to hold the certificate fields
 typedef struct {
@@ -87,7 +88,9 @@ int main() {
     FILE *file = fopen("certificate.txt", "r");
     bool flag = false;
     char c, ch;
-    long long hashKey = 0;
+    srand(clock());
+    long long hashKey = rand() % 1234;
+    keys(hashKey);
 
     do {
         c = fgetc(file);
@@ -96,20 +99,16 @@ int main() {
         }
 
         if(!flag) {
-            ch = hash(c, hashKey, IV);
+            ch = hash(c, hashKey);
             flag = true;
         } else {
-            ch = hash(c, hashKey, ch);
+            ch = hash(c, hashKey);
         }
     } while(1);
 
-    int hashArray[8];
-    charToBinary(ch, hashArray);
+    unsigned char uch = ch;
     
-    printf("Hash: ");
-    for (int i = 0; i < 8; i++) {
-        printf("%d", hashArray[i]);
-    }
+    printf("Hash: %x", uch);
 
    return 0;
 }
