@@ -3,6 +3,7 @@
 #include "SDES.h"
 #include <stdbool.h>
 #include <time.h>
+#include <string.h>
 
 // A structure to hold the certificate fields
 typedef struct {
@@ -21,7 +22,7 @@ typedef struct {
 void writeCertificate(const char *filename, const Certificate *cert) {
     FILE *file = fopen(filename, "w");
     if (!file) {
-        printf("Error opening file", 0);
+        printf("Error opening file");
         return;
     }
 
@@ -40,12 +41,11 @@ void writeCertificate(const char *filename, const Certificate *cert) {
 
 // A function to read the certificate from a file
 void readCertificate(const char *filename, Certificate *cert) {
-    FILE *file = fopen(filename, "r");
+    FILE* file = fopen(filename, "r");
     if (!file) {
-        printf("Error opening file.\n", 0);
-        return;
+        printf("Error opening file.\n");
     }
-
+    
     fscanf(file, "Version: %s\n", cert->version);
     fscanf(file, "Serial Number: %s\n", cert->serialNumber);
     fscanf(file, "Signature Algorithm: %s\n", cert->signatureAlgorithm);
@@ -59,7 +59,40 @@ void readCertificate(const char *filename, Certificate *cert) {
     fclose(file);
 }
 
+bool verifyCert(Certificate cert, char* currentDate, char* currentHash) {
+    //returns true if cert is valid, false otherwise
+
+    //Check if current date is before "valid not before" date
+    if (strcmp(cert.validityNotBefore, currentDate) > 0) {
+        printf("Cert is not valid. Current date is before certificate validity start.");
+        return false;
+    }
+
+    //Check if current date is after "valid not after" date
+    if (strcmp(cert.validityNotAfter, currentDate) > 0) {
+        printf("Cert is not valid. Current date is after certificate validity end.");
+        return false;
+    }
+
+
+    //Check if certificate hashes to the same value
+    char storedHash[1000];
+    FILE* hashFile = fopen("hash.txt", "r");
+    fscanf(hashFile, "%s", storedHash);
+    fclose(hashFile);
+
+    if (strcmp(storedHash, currentHash) != 0) {
+        printf("Cert is not valid. Cert has been modified - hashes do not match.");
+        return false;
+    }
+
+    return true;
+}
+
 int main() {
+    //Manually change the "current date" to check if certificate is within its valid timeframe
+    char currentDate[] = "20231128204400";// YYYY MM DD HH MM SS
+
     // Read the certificate from the file
     Certificate readCert;
     readCertificate("certificate.txt", &readCert);
@@ -83,18 +116,24 @@ int main() {
     system("clear");
     printf("Read certificate:\n", 0);
     printf("Version: %s\n", readCert.version);
-
+    
     // Hash the certificate
-    FILE *file = fopen("certificate.txt", "r");
+
+    FILE* certFile = fopen("certificate.txt", "r");
+    if (!certFile) {
+        printf("Unable to open certFile");
+        return EXIT_FAILURE;
+    }
+
+    printf("AAAAA");
     bool flag = false;
     char c, ch;
-    srand(clock());
-    long long hashKey = rand() % 1234;
+    long long hashKey = 1234;
     keys(hashKey);
 
     do {
-        c = fgetc(file);
-        if (feof(file)) {
+        c = fgetc(certFile);
+        if (feof(certFile)) {
             break;
         }
 
@@ -106,9 +145,16 @@ int main() {
         }
     } while(1);
 
+    fclose(certFile);
+
     unsigned char uch = ch;
-    
     printf("Hash: %x", uch);
+
+    FILE* hashFile = fopen("hash.txt", "w");
+    fprintf(hashFile, "%c\n", uch);
+    fclose(hashFile);
+
+    bool certIsValid = verifyCert(cert, currentDate, uch);
 
    return 0;
 }
