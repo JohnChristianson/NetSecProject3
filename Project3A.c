@@ -18,80 +18,10 @@ typedef struct {
     char trustLevel[4];
 } Certificate;
 
-// A function to write the certificate to a file
-void writeCertificate(const char *filename, const Certificate *cert) {
-    FILE *file = fopen(filename, "w");
-    if (!file) {
-        printf("Error opening file");
-        return;
-    }
-
-    fprintf(file, "Version: %s\n", cert->version);
-    fprintf(file, "Serial Number: %s\n", cert->serialNumber);
-    fprintf(file, "Signature Algorithm: %s\n", cert->signatureAlgorithm);
-    fprintf(file, "Issuer: %s\n", cert->issuer);
-    fprintf(file, "Validity Not Before: %s\n", cert->validityNotBefore);
-    fprintf(file, "Validity Not After: %s\n", cert->validityNotAfter);
-    fprintf(file, "Subject: %s\n", cert->subject);
-    fprintf(file, "Subject Public Key Info: %s\n", cert->subjectPublicKeyInfo);
-    fprintf(file, "Trust Level: %s\n", cert->trustLevel);
-
-    fclose(file);
-}
-
 // A function to read the certificate from a file
-void readCertificate(const char *filename, Certificate *cert) {
-    FILE* file = fopen(filename, "r");
-    if (!file) {
-        printf("Error opening file.\n");
-    }
-    
-    fscanf(file, "Version: %s\n", cert->version);
-    fscanf(file, "Serial Number: %s\n", cert->serialNumber);
+void readCertificate(const char *filename, Certificate *cert);
 
-    fscanf(file, "Signature Algorithm: %s\n", cert->signatureAlgorithm);
-    fscanf(file, "Issuer: %s\n", cert->issuer);
-    printf(cert->issuer);
-
-    fscanf(file, "Validity Not Before: %s\n", cert->validityNotBefore);
-    fscanf(file, "Validity Not After: %s\n", cert->validityNotAfter);
-    fscanf(file, "Subject: %s\n", cert->subject);
-    fscanf(file, "Subject Public Key Info: %s\n", cert->subjectPublicKeyInfo);
-    fscanf(file, "Trust Level: %s\n", cert->trustLevel);
-
-    fclose(file);
-}
-
-bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash) {
-    //returns true if cert is valid, false otherwise
-    printf("%s\n", cert->validityNotBefore);
-
-    //Check if current date is before "valid not before" date
-    if (strcmp(cert->validityNotBefore, currentDate) > 0) {
-        printf("Cert is not valid. Current date is before certificate validity start.");
-        return false;
-    }
-
-    //Check if current date is after "valid not after" date
-    if (strcmp(cert->validityNotAfter, currentDate) > 0) {
-        printf("Cert is not valid. Current date is after certificate validity end.");
-        return false;
-    }
-
-
-    //Check if certificate hashes to the same value
-    FILE* hashFile = fopen("hash.txt", "r");
-    char storedHash = fgetc(hashFile);
-    
-    fclose(hashFile);
-
-    if (storedHash != currentHash) {
-        printf("Cert is not valid. Cert has been modified - hashes do not match.");
-        return false;
-    }
-
-    return true;
-}
+bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash);
 
 int main() {
     //Manually change the "current date" to check if certificate is within its valid timeframe
@@ -99,21 +29,13 @@ int main() {
 
     // Read the certificate from the file
     Certificate readCert;
+
     readCertificate("certificate.txt", &readCert);
 
-    /*Certificate cert = {
-        .version = readCert.version,
-        .serialNumber = readCert.serialNumber,
-        .signatureAlgorithm = readCert.signatureAlgorithm,
-        .issuer = readCert.issuer,
-        .validityNotBefore = readCert.validityNotBefore,
-        .validityNotAfter = readCert.validityNotAfter,
-        .subject = readCert.subject,
-        .subjectPublicKeyInfo = readCert.subjectPublicKeyInfo,
-        .trustLevel = readCert.trustLevel
-    };*/
 
-
+    printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", readCert.version,readCert.serialNumber, readCert.signatureAlgorithm,
+    readCert.issuer, readCert.validityNotBefore, readCert.validityNotAfter, readCert.subject, 
+    readCert.subjectPublicKeyInfo, readCert.trustLevel);
 
     // Hash the certificate
     bool flag = false;
@@ -152,4 +74,76 @@ int main() {
     printf("Cert is valid: %d", certIsValid);
 
    return 0;
+}
+
+// A function to read the certificate from a file
+void readCertificate(const char *filename, Certificate *cert) {
+    char line[100];
+    char *issuerValue;
+
+    FILE* file = fopen(filename, "r");
+    if (!file) {
+        printf("Error opening file.\n");
+    }
+    fscanf(file, "Version: %s\n", cert->version);
+    fscanf(file, "Serial Number: %s\n", cert->serialNumber);
+    fscanf(file, "Signature Algorithm: %s\n", cert->signatureAlgorithm);
+    fgets(line, sizeof(line), file);
+    issuerValue = strstr(line, "Issuer: ");
+    issuerValue += strlen("Issuer: ");
+    int destIndex = 0;    
+    for (int i = 0; i < strlen(issuerValue); i++) {
+        if (issuerValue[i] != '\n') {
+            cert->issuer[destIndex] = issuerValue[i];
+            destIndex++;
+        }
+    }
+    fscanf(file, "Validity Not Before: %s\n", cert->validityNotBefore);
+    fscanf(file, "Validity Not After: %s\n", cert->validityNotAfter);
+    fgets(line, sizeof(line), file);
+    issuerValue = "";
+    issuerValue = strstr(line, "Subject: ");
+    issuerValue += strlen("Subject: ");
+    destIndex = 0;    
+    for (int i = 0; i < strlen(issuerValue); i++) {
+        if (issuerValue[i] != '\n') {
+            cert->subject[destIndex] = issuerValue[i];
+            destIndex++;
+        }
+    }
+    fscanf(file, "Subject Public Key Info: %s\n", cert->subjectPublicKeyInfo);
+    fscanf(file, "Trust Level: %s\n", cert->trustLevel);
+
+    fclose(file);
+}
+
+bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash) {
+    //returns true if cert is valid, false otherwise
+    printf("%s\n", cert->validityNotBefore);
+
+    //Check if current date is before "valid not before" date
+    if (strcmp(cert->validityNotBefore, currentDate) > 0) {
+        printf("Cert is not valid. Current date is before certificate validity start.");
+        return false;
+    }
+
+    //Check if current date is after "valid not after" date
+    if (strcmp(cert->validityNotAfter, currentDate) > 0) {
+        printf("Cert is not valid. Current date is after certificate validity end.");
+        return false;
+    }
+
+
+    //Check if certificate hashes to the same value
+    FILE* hashFile = fopen("hash.txt", "r");
+    char storedHash = fgetc(hashFile);
+    
+    fclose(hashFile);
+
+    if (storedHash != currentHash) {
+        printf("Cert is not valid. Cert has been modified - hashes do not match.");
+        return false;
+    }
+
+    return true;
 }
