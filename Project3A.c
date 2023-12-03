@@ -71,8 +71,6 @@ int main() {
     bool certIsValid = verifyCert(&readCert, currentDate, uch);
     if (certIsValid) {
         printf("Cert is valid and hashes to: %c\n", uch);
-    } else {
-        printf("Cert is not valid\n");
     }
 
    return 0;
@@ -137,7 +135,7 @@ bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash)
 
 
     //Check if certificate hashes to the same value
-    FILE* hashFile = fopen("hash.txt", "r");
+    FILE* hashFile = fopen("certHash.txt", "r");
     char storedHash = fgetc(hashFile);
     
     fclose(hashFile);
@@ -145,6 +143,17 @@ bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash)
     if (storedHash != currentHash) {
         printf("Cert is not valid. Cert has been modified - hashes do not match.\n");
         return false;
+    }
+
+
+    //Check if certificate is in CRL list
+    char revoked;
+    FILE* revokationList = fopen("CRL.txt", "r");
+    while ((revoked = fgetc(revokationList)) != EOF) {
+        if(storedHash == revoked) {
+            printf("Cert is not valid. Cert appears on Certificate Revocation List.\n");
+            return false;
+        }
     }
 
     return true;
