@@ -20,22 +20,20 @@ typedef struct {
 
 // A function to read the certificate from a file
 void readCertificate(const char *filename, Certificate *cert);
-
 bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash);
 
 int main() {
     //Manually change the "current date" to check if certificate is within its valid timeframe
-    char currentDate[] = "20201128204400";// YYYY MM DD HH MM SS
+    char currentDate[] = "20231203164300";// YYYY MM DD HH MM SS
 
     // Read the certificate from the file
     Certificate readCert;
 
     readCertificate("certificate.txt", &readCert);
 
-
-    printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", readCert.version,readCert.serialNumber, readCert.signatureAlgorithm,
+    /*printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", readCert.version,readCert.serialNumber, readCert.signatureAlgorithm,
     readCert.issuer, readCert.validityNotBefore, readCert.validityNotAfter, readCert.subject, 
-    readCert.subjectPublicKeyInfo, readCert.trustLevel);
+    readCert.subjectPublicKeyInfo, readCert.trustLevel);*/
 
     // Hash the certificate
     bool flag = false;
@@ -71,7 +69,11 @@ int main() {
     */
 
     bool certIsValid = verifyCert(&readCert, currentDate, uch);
-    printf("Cert is valid: %d", certIsValid);
+    if (certIsValid) {
+        printf("Cert is valid and hashes to: %c\n", uch);
+    } else {
+        printf("Cert is not valid\n");
+    }
 
    return 0;
 }
@@ -119,17 +121,17 @@ void readCertificate(const char *filename, Certificate *cert) {
 
 bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash) {
     //returns true if cert is valid, false otherwise
-    printf("%s\n", cert->validityNotBefore);
-
+    
+    
     //Check if current date is before "valid not before" date
     if (strcmp(cert->validityNotBefore, currentDate) > 0) {
-        printf("Cert is not valid. Current date is before certificate validity start.");
+        printf("Cert is not valid. Current date is before certificate validity start.\n");
         return false;
     }
 
     //Check if current date is after "valid not after" date
-    if (strcmp(cert->validityNotAfter, currentDate) > 0) {
-        printf("Cert is not valid. Current date is after certificate validity end.");
+    if (strcmp(cert->validityNotAfter, currentDate) < 0) {
+        printf("Cert is not valid. Current date is after certificate validity end.\n");
         return false;
     }
 
@@ -141,7 +143,7 @@ bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash)
     fclose(hashFile);
 
     if (storedHash != currentHash) {
-        printf("Cert is not valid. Cert has been modified - hashes do not match.");
+        printf("Cert is not valid. Cert has been modified - hashes do not match.\n");
         return false;
     }
 
