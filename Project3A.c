@@ -35,6 +35,8 @@ int main() {
     readCert.issuer, readCert.validityNotBefore, readCert.validityNotAfter, readCert.subject, 
     readCert.subjectPublicKeyInfo, readCert.trustLevel);*/
 
+
+
     // Hash the certificate
     bool flag = false;
     char c, ch;
@@ -60,18 +62,49 @@ int main() {
     fclose(hashFileCert);
 
     unsigned char uch = ch;
-    //printf("Hash: %x\n", uch);
-
-    /*
-    FILE* hashFile = fopen("hash.txt", "w");
-    fprintf(hashFile, "%c\n", uch);
-    fclose(hashFile);
-    */
-
     bool certIsValid = verifyCert(&readCert, currentDate, uch);
     if (certIsValid) {
         printf("Cert is valid and hashes to: %c\n", uch);
     }
+
+
+
+    // Hash the CRL
+    flag = false;
+    keys(hashKey);
+
+    FILE* crlFileCert = fopen("CRL.txt", "r");
+    
+    do {
+        c = fgetc(crlFileCert);
+        if (feof(crlFileCert)) {
+            break;
+        }
+
+        if(!flag) {
+            ch = hash(c, hashKey);
+            flag = true;
+        } else {
+            ch = hash(c, hashKey);
+        }
+    } while(1);
+
+    fclose(hashFileCert);
+
+    uch = ch;
+
+    FILE* crlHash = fopen("crlHash.txt", "r");
+    unsigned char crlHashChar = fgetc(crlHash);
+
+    if (uch == crlHashChar) {
+        printf("CRL is valid and hashes to:  %c\n", uch);
+    } else {
+        printf("CRL is not valid - hashes do not match");
+    }
+
+    fclose(crlHash);
+
+
 
    return 0;
 }
