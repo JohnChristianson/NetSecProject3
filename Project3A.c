@@ -24,18 +24,11 @@ bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash)
 
 int main() {
     //Manually change the "current date" to check if certificate is within its valid timeframe
-    char currentDate[] = "20231203164300";// YYYY MM DD HH MM SS
+    char currentDate[] = "20231205092956";// YYYY MM DD HH MM SS
 
     // Read the certificate from the file
     Certificate readCert;
-
     readCertificate("certificate.txt", &readCert);
-
-    /*printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", readCert.version,readCert.serialNumber, readCert.signatureAlgorithm,
-    readCert.issuer, readCert.validityNotBefore, readCert.validityNotAfter, readCert.subject, 
-    readCert.subjectPublicKeyInfo, readCert.trustLevel);*/
-
-
 
     // Hash the certificate
     bool flag = false;
