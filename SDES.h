@@ -401,16 +401,25 @@ char encryptPixels(char character)
 
 char decryptPixels(char character)
 {
-    charToBinary(character, ciphertext);
+    charToBinary(character, ciphertext);                 
     Decrypt();
     return character = binaryArrayToChar(plaintext);   
 }
 
-void keys(long long something){
+void zeroArray(int* arr, int length) {
+    for (int i = 0; i < length; i++) {
+        arr[i] = 0;
+    }
+}
+
+void keys(long long something) 
+{
     char character;
     int output[10];
     int count = 0;
     int i = 0;
+
+    zeroArray(key, 10);
     convertToBinaryArray(something, key, 10);
 
     for (int i = 0; i < 10; i++)
@@ -424,10 +433,16 @@ void keys(long long something){
     }
 
     subKey(key, keySaver, 1);
+
+    zeroArray(subKey1, 8);
     copyArray(key, subKey1, 8);
 
     subKey(keySaver, key, 2);
+
+    zeroArray(key, 10);
     copyArray(keySaver, key, 8);
+
+    zeroArray(subKey2, 8);
     copyArray(key, subKey2, 8);
 }
 

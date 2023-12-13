@@ -22,6 +22,45 @@ typedef struct {
 void readCertificate(const char *filename, Certificate *cert);
 bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash);
 
+unsigned char hashSomething(char* fileToHash, char* storedHash, long long key) {
+    bool flag = false;
+    char c, ch;
+    keys(key);
+
+    FILE* hashedFile = fopen(fileToHash, "r");
+
+    do {
+        c = fgetc(hashedFile);
+        if (feof(hashedFile)) {
+            break;
+        }
+
+        if(!flag) {
+            ch = hash(c, 1234);
+            flag = true;
+        } else {
+            ch = hash(c, 1234);
+        }
+    } while(1);
+
+    fclose(hashedFile);
+
+    unsigned char uch = ch;
+
+    FILE* storedHashFile = fopen(storedHash, "r");
+    unsigned char storedHashChar = fgetc(storedHashFile);
+
+    /* (uch == storedHashChar) {
+        printf("%s has not been modified. Hashes match.\n", fileToHash);
+    } else {
+        printf("%s has been modified! Hashes do not match\n", fileToHash);
+    }*/
+
+    fclose(storedHashFile);
+
+    return uch;
+}
+
 int main() {
     //Manually change the "current date" to check if certificate is within its valid timeframe
     char currentDate[] = "20231205092956";// YYYY MM DD HH MM SS
@@ -29,6 +68,47 @@ int main() {
     // Read the certificate from the file
     Certificate readCert;
     readCertificate("certificate.txt", &readCert);
+
+
+
+/*    // Hash the CRL
+    bool Rflag = false;
+    char Rc, Rch;
+    long long tempA = 4321;
+    keys(tempA);
+
+    FILE* crlFileCert = fopen("CRL.txt", "r");
+    
+    do {
+        Rc = fgetc(crlFileCert);
+        if (feof(crlFileCert)) {
+            break;
+        }
+
+        if(!Rflag) {
+            Rch = hash(Rc, 1234);
+            Rflag = true;
+        } else {
+            Rch = hash(Rc, 1234);
+        }
+    } while(1);
+
+    fclose(crlFileCert);
+
+    unsigned char uRch = Rch;
+
+    FILE* crlHash = fopen("crlHash.txt", "r");
+    unsigned char crlHashChar = fgetc(crlHash);
+
+    if (uRch == crlHashChar) {
+        printf("CRL is valid and hashes to:  %c\n", uRch);
+    } else {
+        printf("CRL is not valid - hashes do not match (%c)\n", uRch);
+    }
+
+    fclose(crlHash);
+
+
 
     // Hash the certificate
     bool flag = false;
@@ -53,53 +133,44 @@ int main() {
     } while(1);
 
     fclose(hashFileCert);
-
-    unsigned char uch = ch;
-    bool certIsValid = verifyCert(&readCert, currentDate, uch);
-    if (certIsValid) {
-        printf("Cert is valid and hashes to: %c\n", uch);
-    }
-
-
-
-    // Hash the CRL
-    flag = false;
-    keys(hashKey);
-
-    FILE* crlFileCert = fopen("CRL.txt", "r");
     
-    do {
-        c = fgetc(crlFileCert);
-        if (feof(crlFileCert)) {
-            break;
-        }
+    unsigned char uch = ch;
+*/
 
-        if(!flag) {
-            ch = hash(c, hashKey);
-            flag = true;
-        } else {
-            ch = hash(c, hashKey);
-        }
-    } while(1);
+    long long hashKey = 1234;
 
-    fclose(hashFileCert);
+    unsigned char crlCurrentHash = hashSomething("CRL.txt", "crlHash.txt", hashKey);
+    unsigned char certCurrentHash = hashSomething("certificate.txt", "certHash.txt", hashKey);
 
-    uch = ch;
+    FILE* certHashFile = fopen("certHash.txt", "r");
+    unsigned char certStoredHash = fgetc(certHashFile);
+    fclose(certHashFile);
 
-    FILE* crlHash = fopen("crlHash.txt", "r");
-    unsigned char crlHashChar = fgetc(crlHash);
+    FILE* crlHashFile = fopen("crlHash.txt", "r");
+    unsigned char crlStoredHash = fgetc(crlHashFile);
+    fclose(crlHashFile);
 
-    if (uch == crlHashChar) {
-        printf("CRL is valid and hashes to:  %c\n", uch);
+    printf("\nCRL currently hashes to:  %c\n", crlCurrentHash);
+    printf("Stored CRL hash is:       %c\n\n", crlStoredHash);
+    
+    if (crlCurrentHash != crlStoredHash) {
+        printf("\n\nCRL is not valid!");
+        return 0;
     } else {
-        printf("CRL is not valid - hashes do not match");
+        printf("CRL is valid. Hashes match.\n");
     }
 
-    fclose(crlHash);
+    printf("\n\nCert currently hashes to: %c\n", certCurrentHash);
+    printf("Stored cert hash is:      %c\n\n", certStoredHash);
 
 
+    bool certIsValid = verifyCert(&readCert, currentDate, certCurrentHash);
 
-   return 0;
+    if (certIsValid) {
+        printf("Cert is valid.\n");
+    }
+    
+    return 0;
 }
 
 // A function to read the certificate from a file
@@ -167,7 +238,7 @@ bool verifyCert(Certificate* cert, char* currentDate, unsigned char currentHash)
     fclose(hashFile);
 
     if (storedHash != currentHash) {
-        printf("Cert is not valid. Cert has been modified - hashes do not match.\n");
+        printf("Cert is not valid. Cert has been modified - hashes do not match (%c).\n", currentHash);
         return false;
     }
 
